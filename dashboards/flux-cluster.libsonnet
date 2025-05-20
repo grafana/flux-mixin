@@ -22,9 +22,9 @@ local template = grafana.template;
         .addTarget(
           prometheus.target(
             |||
-              count(gotk_reconcile_condition{%(clusterLabel)s="$cluster",namespace=~"$namespace",type="Ready",status="True",kind=~"Kustomization|HelmRelease"})
+              count(gotk_resource_info{%(clusterLabel)s="$cluster",exported_namespace=~"$namespace",ready="True",customresource_kind=~"Kustomization|HelmRelease"})
               -
-              sum(gotk_reconcile_condition{%(clusterLabel)s="$cluster",namespace=~"$namespace",type="Ready",status="Deleted",kind=~"Kustomization|HelmRelease"})
+              (sum(gotk_resource_info{%(clusterLabel)s="$cluster",exported_namespace=~"$namespace",ready!="True",customresource_kind=~"Kustomization|HelmRelease"}) or vector(0))
             ||| % $._config,
           )
         )
@@ -38,7 +38,7 @@ local template = grafana.template;
           reducerFunction='last',
         )
         .addTarget(
-          prometheus.target('sum(gotk_reconcile_condition{%(clusterLabel)s="$cluster",namespace=~"$namespace",type="Ready",status="False",kind=~"Kustomization|HelmRelease"})' % $._config)
+          prometheus.target('sum(gotk_resource_info{%(clusterLabel)s="$cluster",exported_namespace=~"$namespace",ready!="True",customresource_kind=~"Kustomization|HelmRelease"}) or vector(0)' % $._config)
         )
         .addThreshold({ color: 'red', value: null });
 
@@ -52,9 +52,9 @@ local template = grafana.template;
         .addTarget(
           prometheus.target(
             |||
-              count(gotk_reconcile_condition{%(clusterLabel)s="$cluster",namespace=~"$namespace",type="Ready",status="True",kind=~"GitRepository|HelmRepository|Bucket"})
+              count(gotk_resource_info{%(clusterLabel)s="$cluster",exported_namespace=~"$namespace",ready="True",customresource_kind=~"GitRepository|HelmRepository|Bucket"})
               -
-              sum(gotk_reconcile_condition{%(clusterLabel)s="$cluster",namespace=~"$namespace",type="Ready",status="Deleted",kind=~"GitRepository|HelmRepository|Bucket"})
+              (sum(gotk_resource_info{%(clusterLabel)s="$cluster",exported_namespace=~"$namespace",ready!="True",customresource_kind=~"GitRepository|HelmRepository|Bucket"}) or vector(0))
             ||| % $._config,
           )
         )
@@ -70,7 +70,7 @@ local template = grafana.template;
         )
         .addTarget(
           prometheus.target(
-            'sum(gotk_reconcile_condition{%(clusterLabel)s="$cluster",namespace=~"$namespace",type="Ready",status="False",kind=~"GitRepository|HelmRepository|Bucket"})' % $._config,
+            'sum(gotk_resource_info{%(clusterLabel)s="$cluster",exported_namespace=~"$namespace",ready!="True",customresource_kind=~"GitRepository|HelmRepository|Bucket"}) or vector(0)' % $._config,
           )
         )
         .addThreshold({ color: 'red', value: 0 });
@@ -89,9 +89,9 @@ local template = grafana.template;
         .addTarget(
           prometheus.target(
             |||
-              sum(rate(gotk_reconcile_duration_seconds_sum{%(clusterLabel)s="$cluster",namespace=~"$namespace",kind=~"Kustomization|HelmRelease"}[5m])) by (kind)
+              sum(rate(gotk_reconcile_duration_seconds_sum{%(clusterLabel)s="$cluster",exported_namespace=~"$namespace",kind=~"Kustomization|HelmRelease"}[5m])) by (kind)
               /
-              sum(rate(gotk_reconcile_duration_seconds_count{%(clusterLabel)s="$cluster",namespace=~"$namespace",kind=~"Kustomization|HelmRelease"}[5m])) by (kind)
+              (sum(rate(gotk_reconcile_duration_seconds_count{%(clusterLabel)s="$cluster",exported_namespace=~"$namespace",kind=~"Kustomization|HelmRelease"}[5m])) by (kind) or vector(0))
             ||| % $._config,
             legendFormat='{{kind}}'
           )
@@ -120,9 +120,9 @@ local template = grafana.template;
         .addTarget(
           prometheus.target(
             |||
-              sum(rate(gotk_reconcile_duration_seconds_sum{%(clusterLabel)s="$cluster",namespace=~"$namespace",kind=~"GitRepository|HelmRepository|Bucket"}[5m])) by (kind)
+              sum(rate(gotk_reconcile_duration_seconds_sum{%(clusterLabel)s="$cluster",exported_namespace=~"$namespace",kind=~"GitRepository|HelmRepository|Bucket"}[5m])) by (kind)
               /
-              sum(rate(gotk_reconcile_duration_seconds_count{%(clusterLabel)s="$cluster",namespace=~"$namespace",kind=~"GitRepository|HelmRepository|Bucket"}[5m])) by (kind)
+              sum(rate(gotk_reconcile_duration_seconds_count{%(clusterLabel)s="$cluster",exported_namespace=~"$namespace",kind=~"GitRepository|HelmRepository|Bucket"}[5m])) by (kind)
             ||| % $._config,
             legendFormat='{{kind}}'
           )
@@ -241,7 +241,7 @@ local template = grafana.template;
         )
         .addTarget(
           prometheus.target(
-            'gotk_reconcile_condition{%(clusterLabel)s="$cluster",namespace=~"$namespace",type="Ready",status="False",kind=~"Kustomization|HelmRelease"}' % $._config,
+            'gotk_resource_info{%(clusterLabel)s="$cluster",exported_namespace=~"$namespace",ready!="True",customresource_kind=~"Kustomization|HelmRelease"} or vector(0)' % $._config,
             format='table',
             instant=true
           )
@@ -257,7 +257,7 @@ local template = grafana.template;
         )
         .addTarget(
           prometheus.target(
-            'gotk_reconcile_condition{%(clusterLabel)s="$cluster",namespace=~"$namespace",type="Ready",status="False",kind=~"GitRepository|HelmRepository|Bucket"}' % $._config,
+            'gotk_resource_info{%(clusterLabel)s="$cluster",exported_namespace=~"$namespace",ready!="True",customresource_kind=~"GitRepository|HelmRepository|Bucket"} or vector(0)' % $._config,
             format='table',
             instant=true
           )
@@ -281,9 +281,9 @@ local template = grafana.template;
         .addTarget(
           prometheus.target(
             |||
-              sum(rate(gotk_reconcile_duration_seconds_sum{%(clusterLabel)s="$cluster",namespace=~"$namespace",kind=~"Kustomization|HelmRelease"}[5m])) by (kind, name)
+              sum(rate(gotk_reconcile_duration_seconds_sum{%(clusterLabel)s="$cluster",exported_namespace=~"$namespace",kind=~"Kustomization|HelmRelease"}[5m])) by (kind, name)
               /
-              sum(rate(gotk_reconcile_duration_seconds_count{%(clusterLabel)s="$cluster",namespace=~"$namespace",kind=~"Kustomization|HelmRelease"}[5m])) by (kind, name)
+              sum(rate(gotk_reconcile_duration_seconds_count{%(clusterLabel)s="$cluster",exported_namespace=~"$namespace",kind=~"Kustomization|HelmRelease"}[5m])) by (kind, name)
             ||| % $._config,
             legendFormat='{{kind}}/{{name}}'
           )
@@ -304,9 +304,9 @@ local template = grafana.template;
         .addTarget(
           prometheus.target(
             |||
-              sum(rate(gotk_reconcile_duration_seconds_sum{%(clusterLabel)s="$cluster",namespace=~"$namespace",kind=~"GitRepository|HelmRepository|Bucket"}[5m])) by (kind, name)
+              sum(rate(gotk_reconcile_duration_seconds_sum{%(clusterLabel)s="$cluster",exported_namespace=~"$namespace",kind=~"GitRepository|HelmRepository|Bucket"}[5m])) by (kind, name)
               /
-              sum(rate(gotk_reconcile_duration_seconds_count{%(clusterLabel)s="$cluster",namespace=~"$namespace",kind=~"GitRepository|HelmRepository|Bucket"}[5m])) by (kind, name)
+              sum(rate(gotk_reconcile_duration_seconds_count{%(clusterLabel)s="$cluster",exported_namespace=~"$namespace",kind=~"GitRepository|HelmRepository|Bucket"}[5m])) by (kind, name)
             ||| % $._config,
             legendFormat='{{kind}}/{{name}}'
           )
@@ -338,7 +338,7 @@ local template = grafana.template;
         template.new(
           'cluster',
           '$datasource',
-          'label_values(gotk_reconcile_condition, %(clusterLabel)s)' % $._config,
+          'label_values(gotk_resource_info, %(clusterLabel)s)' % $._config,
           label='cluster',
           refresh='time',
           hide=if $._config.showMultiCluster then '' else 'variable',
@@ -349,7 +349,7 @@ local template = grafana.template;
         template.new(
           'namespace',
           '$datasource',
-          'label_values(gotk_reconcile_condition{%(clusterLabel)s="$cluster"}, namespace)' % $._config,
+          'label_values(gotk_resource_info{%(clusterLabel)s="$cluster"}, namespace)' % $._config,
           refresh='time',
           includeAll=true,
           sort=1,
